@@ -19,9 +19,11 @@ model = joblib.load(MODEL_PATH)
 vectorizer = joblib.load(VECTORIZER_PATH)
 label_encoder = joblib.load(LABEL_ENCODER_PATH)
 
+
 @app.route("/")
 def home():
     return "ML API Running 🚀"
+
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -32,22 +34,17 @@ def predict():
         if not text:
             return jsonify({"error": "No text provided"}), 400
 
-    
         text_vector = vectorizer.transform([text])
 
-   
         prediction = model.predict(text_vector)
 
-  
         final_output = label_encoder.inverse_transform(prediction)[0]
 
-        return jsonify({
-            "input": text,
-            "prediction": final_output
-        })
+        return jsonify({"input": text, "prediction": final_output})
 
     except Exception as e:
         return jsonify({"error": str(e)})
+
 
 if __name__ == "__main__":
     FLASK_PORT = int(os.getenv("FLASK_PORT", 5000))
