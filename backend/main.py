@@ -5,9 +5,9 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-
-# import environment config
+from backend.xai_service import XAIService
 from backend.config import FRONTEND_URL, BASE_URL, PORT
+xai_service = XAIService()
 
 # ── Resolve model paths relative to this file ────────────────────────────────
 # FIX: Use pathlib.Path so the app works regardless of the working directory.

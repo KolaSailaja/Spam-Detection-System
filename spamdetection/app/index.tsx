@@ -28,6 +28,8 @@ export default function Index() {
   const resultInfo =
     typeof result === "string" ? (LABEL_MAP[result] ?? null) : null;
 
+  const confidencePct = confidence !== null ? (Math.min(confidence * 50 + 50, 100)).toFixed(1) : "0.0";
+
   const API_URL =
     Platform.OS === "android"
       ? (process.env.EXPO_PUBLIC_ANDROIDAPI ?? "")
@@ -132,7 +134,7 @@ export default function Index() {
           {confidence !== null && (
             <View style={styles.confidenceContainer}>
               <Text style={styles.confidenceText}>
-                Model Confidence: {(Math.min(confidence * 50 + 50, 100)).toFixed(1)}%
+                Model Confidence: {confidencePct}%
               </Text>
               <View style={styles.progressBarBg}>
                 <View
@@ -140,7 +142,7 @@ export default function Index() {
                     styles.progressBarFill,
                     {
                       backgroundColor: resultInfo.color,
-                      width: `${Math.min(confidence * 50 + 50, 100)}%`,
+                      width: `${confidencePct}%`,
                     },
                   ]}
                 />

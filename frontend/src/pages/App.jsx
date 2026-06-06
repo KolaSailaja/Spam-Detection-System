@@ -1,27 +1,35 @@
 import { useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import api from "./utils/axiosInstance";
-import "./App.css";
+import { AuthProvider, useAuth } from "../context/AuthContext";
+import ProtectedRoute from "../components/ProtectedRoute";
+import Login from "./Login.jsx";
+import Register from "./Register.jsx";
+import api from "../utils/axiosInstance";
+import "../App.css";
+import { useNavigate } from "react-router-dom";
 
-function SpamDetector() {
+function App() {
   const [text, setText] = useState("");
   const [result, setResult] = useState("");
   const [confidence, setConfidence] = useState(null);
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState("message");
   const [darkMode, setDarkMode] = useState(false);
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+const logout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  navigate("/");
+};
 
   const handlePredict = async () => {
     if (!text) return;
 
     try {
       setLoading(true);
-      const res = await api.post(import.meta.env.VITE_API_URI, {
+      const res = await api.post(
+        `${import.meta.env.VITE_API_URI}/predict`, {
         text: text,
         type: type,
       });
@@ -47,6 +55,8 @@ function SpamDetector() {
     if (result === "smishing") return "bg-orange-400/20 backdrop-blur-md border border-white/30";
     return "bg-white/20 backdrop-blur-md border border-white/30";
   };
+
+  const confidencePct = confidence !== null ? Math.min(confidence * 50 + 50, 100).toFixed(1) : "0.0";
 
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 transition-all duration-500 ${
@@ -140,7 +150,7 @@ function SpamDetector() {
           {result && confidence !== null && result !== "Error" && (
             <div className="mt-3 text-left">
               <p className={`text-xs font-medium mb-1 ${ darkMode ? "text-gray-400" : "text-gray-600" }`}>
-                Model Confidence: {(Math.min(confidence * 50 + 50, 100)).toFixed(1)}%
+                Model Confidence: {confidencePct}%
               </p>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
@@ -148,7 +158,7 @@ function SpamDetector() {
                     result === "ham" ? "bg-green-500" :
                     result === "spam" ? "bg-red-500" : "bg-orange-500"
                   }`}
-                  style={{ width: `${Math.min(confidence * 50 + 50, 100).toFixed(1)}%` }}
+                  style={{ width: `${confidencePct}%` }}
                 />
               </div>
             </div>
@@ -166,25 +176,5 @@ function SpamDetector() {
   );
 }
 
-function App() {
-  return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <SpamDetector />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
-  );
-}
 
 export default App;
