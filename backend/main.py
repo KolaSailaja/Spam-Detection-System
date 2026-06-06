@@ -3,9 +3,9 @@ import joblib
 from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-
-# import environment config
+from backend.xai_service import XAIService
 from backend.config import FRONTEND_URL, BASE_URL, PORT
+xai_service = XAIService()
 
 # Load your models
 # Ensure these files are in the root directory
