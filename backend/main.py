@@ -60,6 +60,9 @@ def root():
 def health():
     return {"status": "healthy"}
 
+@app.get("/importance")
+def get_importance():
+    return {"global_importance": xai_service.get_global_importance()}
 # -- EMAIL DATABASE ROUTES (Issue #13) -------------------------
 from backend.emails import router as emails_router
 # from backend.database import init_db # Uncomment if DB is set up

@@ -1,13 +1,17 @@
 import joblib
 import numpy as np
+import shap
 from lime.lime_text import LimeTextExplainer
 
 class XAIService:
     def __init__(self, model_path='backend/linear_svm_model.pkl', vectorizer_path='backend/tfidf_vectorizer.pkl'):
-        # Load models once during initialization
         self.model = joblib.load(model_path)
         self.vectorizer = joblib.load(vectorizer_path)
         self.explainer = LimeTextExplainer(class_names=['Ham', 'Spam'])
+        
+        # Background samples for SHAP
+        self.background_texts = ["free lottery", "hello friend", "urgent meeting", "win cash"]
+        self.background_features = self.vectorizer.transform(self.background_texts)
 
     def _predict_proba_wrapper(self, texts):
         features = self.vectorizer.transform(texts)
@@ -22,10 +26,32 @@ class XAIService:
         return prob_matrix
 
     def get_local_explanation(self, text):
-        """Generates LIME explanation for a single prediction."""
         exp = self.explainer.explain_instance(text, self._predict_proba_wrapper, num_features=5)
         return [[str(word), float(score)] for word, score in exp.as_list()]
 
     def get_global_importance(self):
-        """Placeholder for future SHAP global feature importance integration."""
-        return {"message": "SHAP global explainer is currently under development."}
+        """Generates global feature importance using SHAP for LinearSVC."""
+        # 1. Convert to dense array
+        dense_background = self.background_features.toarray()
+        
+        # 2. Initialize and calculate
+        explainer = shap.LinearExplainer(self.model, dense_background)
+        shap_values = explainer.shap_values(dense_background)
+        
+        # 3. FIX: Handle the multi-class dimension
+        # If shap_values is a list (for multi-output), take the second class (index 1)
+        # If it is a 3D array (samples, features, classes), take the second class
+        if isinstance(shap_values, list):
+            shap_values = shap_values[1]
+        elif shap_values.ndim == 3:
+            shap_values = shap_values[:, :, 1]
+
+        # 4. Calculate mean absolute importance
+        feature_names = self.vectorizer.get_feature_names_out()
+        importance = np.abs(shap_values).mean(axis=0)
+        
+        # 5. Pair and sort
+        feature_importance = dict(zip(feature_names, importance))
+        sorted_importance = sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)[:10]
+        
+        return [[word, float(score)] for word, score in sorted_importance]
