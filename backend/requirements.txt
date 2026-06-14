@@ -6,4 +6,6 @@ fastapi
 uvicorn
 mysql-connector-python
 fpdf2
+python-whois>=0.8.0
+dnspython>=2.4.0
 pytest
