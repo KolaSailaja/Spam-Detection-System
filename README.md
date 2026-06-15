@@ -130,6 +130,15 @@ if __name__ == "__main__":
 npm install express axios cors
 ```
 
+## Mongo Db Atlas Backend
+.env
+
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/spamdetection?retryWrites=true&w=majority
+JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+JWT_EXPIRES_IN=7d
+
+
+
 ### ⚙️ Server Code
 
 ```javascript
@@ -233,7 +242,7 @@ export default function App() {
 ```
 ---
 
-## 🗄️ Email Classification Database
+## 🗄️ Email Classification Database (Flask)
 
 A MySQL-based system to store and manage classified email records.
 
@@ -339,6 +348,31 @@ This merges `feedback_store.csv` with the original training dataset (`DATASET_PA
 * ✅ Real-time Prediction API
 * ✅ Cross-platform (Web + Mobile)
 * ✅ Scalable Architecture
+
+---
+
+## 🎨 Theme Customization System
+
+The frontend now includes a fully customizable theme system that allows users to personalize the application's appearance.
+
+## Features
+Added 5 unique themes:
+Ocean
+Sunset
+Forest
+Purple
+Mono
+
+## Theme selector accessible through the 🎨 Theme button in the top-right corner.
+Full support for Light Mode and Dark Mode across all themes.
+Dynamic adaptation of:
+Background gradients
+Cards and panels
+Buttons and accent colors
+Interactive UI elements
+Theme preferences are maintained throughout the user's active session.
+Seamless theme switching without affecting application functionality.
+
 
 ---
 
