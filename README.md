@@ -1,4 +1,5 @@
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
+![Docker Build](https://github.com/Userunknown84/Spam-Detection-System/actions/workflows/docker.yml/badge.svg)
 
 # 🚀 Spam Detection System
 
@@ -400,6 +401,8 @@ Seamless theme switching without affecting application functionality.
 ---
 
 ## 🐳 Running with Docker
+
+> ✅ All three images (`ml-api`, `node-backend`, `frontend`) are automatically built and the ML API is smoke-tested via [GitHub Actions](.github/workflows/docker.yml) on every push and pull request to `main`, so the Dockerfiles always stay in sync with the latest code.
 
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/) installed
