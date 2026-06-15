@@ -5,6 +5,8 @@ import api from "../utils/axiosInstance";
 import "../App.css";
 import FeatureImportance from "../components/FeatureImportance";
 import FeedbackWidget from "../components/FeedbackWidget";
+import Login from "./Login.jsx";
+import Register from "./Register.jsx";
 
 function SpamDetector() {
   const [text, setText] = useState("");
