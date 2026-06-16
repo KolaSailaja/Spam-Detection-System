@@ -3,6 +3,7 @@ import api from '../utils/axiosInstance';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { GoogleLogin } from '@react-oauth/google';
 import '../App.css';
 
 const Login = () => {
@@ -34,6 +35,24 @@ const Login = () => {
       navigate('/app');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.post(`${import.meta.env.VITE_API_URI}/api/auth/google`, {
+        idToken: credentialResponse.credential,
+      });
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      login(res.data.user);
+      navigate('/app');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Google Sign-in failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -92,6 +111,24 @@ const Login = () => {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        <div className="flex flex-col items-center mt-6">
+          <div className="flex items-center w-full my-4">
+            <div className="border-b border-gray-300 dark:border-gray-700 flex-grow"></div>
+            <span className="px-3 text-xs opacity-65 font-semibold uppercase">Or continue with</span>
+            <div className="border-b border-gray-300 dark:border-gray-700 flex-grow"></div>
+          </div>
+          
+          <div className="w-full flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Sign-in failed. Please try again.')}
+              theme={isDark ? "dark" : "outline"}
+              shape="rectangular"
+              width="100%"
+            />
+          </div>
+        </div>
 
         <p className="text-center mt-6 text-sm opacity-70 font-medium">
           Don't have an account?{' '}

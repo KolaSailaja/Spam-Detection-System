@@ -2,6 +2,8 @@ import { useState } from 'react';
 import api from '../utils/axiosInstance';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 import '../App.css';
 
 const Register = () => {
@@ -10,6 +12,7 @@ const Register = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
   const { activeTheme, isDark } = useTheme();
 
   const handleChange = (e) => {
@@ -31,6 +34,26 @@ const Register = () => {
       setTimeout(() => navigate('/'), 1500);
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await api.post(`${import.meta.env.VITE_API_URI}/api/auth/google`, {
+        idToken: credentialResponse.credential,
+      });
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      login(res.data.user);
+      setSuccess('Successfully logged in with Google!');
+      setTimeout(() => navigate('/app'), 1000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Google Sign-in failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -107,6 +130,24 @@ const Register = () => {
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
+
+        <div className="flex flex-col items-center mt-6">
+          <div className="flex items-center w-full my-4">
+            <div className="border-b border-gray-300 dark:border-gray-700 flex-grow"></div>
+            <span className="px-3 text-xs opacity-65 font-semibold uppercase">Or continue with</span>
+            <div className="border-b border-gray-300 dark:border-gray-700 flex-grow"></div>
+          </div>
+          
+          <div className="w-full flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Sign-in failed. Please try again.')}
+              theme={isDark ? "dark" : "outline"}
+              shape="rectangular"
+              width="100%"
+            />
+          </div>
+        </div>
 
         <p className="text-center mt-6 text-sm opacity-70 font-medium">
           Already have an account?{' '}
