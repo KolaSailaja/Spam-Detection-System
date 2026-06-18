@@ -11,6 +11,7 @@ import Register from "./Register.jsx";
 import EmailHeaderAnalyzer from "../components/EmailHeaderAnalyzer";
 import BulkSpamDetection from "../components/BulkSpamDetection";
 import SpamInsightsDashboard from "../components/SpamInsightsDashboard";
+import EmailScannerDashboard from "../components/EmailScannerDashboard";
 
 function SpamDetector() {
   const [text, setText] = useState("");
@@ -19,7 +20,13 @@ function SpamDetector() {
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState("message");
   const [showSettings, setShowSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState("detector"); // "detector" or "authenticity"
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("provider") && params.get("code")) {
+      return "scanner";
+    }
+    return "detector";
+  }); // "detector", "bulk", "insights", "authenticity", or "scanner"
   const { user, logout } = useAuth();
 
   const {
@@ -234,6 +241,16 @@ function SpamDetector() {
             >
               Sender Verifier
             </button>
+            <button
+              onClick={() => setActiveTab("scanner")}
+              className={`pb-1 px-4 transition-all border-b-2 ${
+                activeTab === "scanner"
+                  ? "border-current opacity-100"
+                  : "border-transparent opacity-50 hover:opacity-75"
+              }`}
+            >
+              Email Scanner
+            </button>
           </div>
 
           {activeTab === "detector" ? (
@@ -338,6 +355,8 @@ function SpamDetector() {
             <BulkSpamDetection />
           ) : activeTab === "insights" ? (
             <SpamInsightsDashboard />
+          ) : activeTab === "scanner" ? (
+            <EmailScannerDashboard />
           ) : (
             <EmailHeaderAnalyzer />
           )}
