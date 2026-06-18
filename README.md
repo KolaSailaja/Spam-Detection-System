@@ -403,6 +403,43 @@ Submit files (EML format) under key `file`.
 
 ---
 
+## 📬 Gmail & Outlook Integration for Automatic Email Scanning
+
+Allows users to link their Gmail and Outlook accounts securely via OAuth 2.0 and automatically scan the latest incoming emails.
+
+### Features
+* **OAuth 2.0 Integration**: Authorize with Google and Microsoft to scan live inboxes.
+* **Inline Risk Scoring**: Integrates directly with the Sender Verification analysis module to show trust levels (Trusted, Suspicious, High Risk) for each email based on SPF, DKIM, and DMARC headers.
+* **Aggregated Insights**: Displays metrics cards showing Total, Spam/Risk, and Clean emails in the scanned inbox batch.
+* **Collapsible Email Reports**: Expand any scanned email to view the snippet and domain alignment validation details.
+
+### Environment Setup
+
+Add these credentials to your backend `.env` file:
+```env
+# Google OAuth 2.0 Credentials
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# Microsoft Graph OAuth 2.0 Credentials
+MICROSOFT_CLIENT_ID=your_microsoft_client_id
+MICROSOFT_CLIENT_SECRET=your_microsoft_client_secret
+```
+
+### Endpoints
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/gmail/auth-url` | Protected | Returns the Google OAuth 2.0 consent page URL |
+| `GET` | `/gmail/connect` | Protected | Exchanges the authorization code for Gmail access/refresh tokens |
+| `GET` | `/gmail/emails` | Protected | Fetches up to 50 of the latest Gmail emails |
+| `GET` | `/outlook/auth-url` | Protected | Returns the Microsoft Graph OAuth 2.0 consent page URL |
+| `GET` | `/outlook/connect` | Protected | Exchanges the authorization code for Microsoft Graph tokens |
+| `GET` | `/outlook/emails` | Protected | Fetches up to 50 of the latest Outlook emails |
+| `POST` | `/scan-emails` | Protected | Fetches latest emails for provider and runs ML classification and header verification |
+
+---
+
 ## 🧠 Spam Pattern Insights & Analytics Dashboard
 
 Features:

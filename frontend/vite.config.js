@@ -13,6 +13,9 @@ export default defineConfig({
       '/analyze-email-header': 'http://localhost:3000',
       '/bulk-predict': 'http://localhost:3000',
       '/spam-insights': 'http://localhost:3000',
+      '/gmail': 'http://localhost:3000',
+      '/outlook': 'http://localhost:3000',
+      '/scan-emails': 'http://localhost:3000',
     },
   },
 })

@@ -9,6 +9,13 @@ from domain_checker import analyze_text
 from email_header_analyzer import analyze_headers
 from pathlib import Path
 from flask_cors import CORS
+import sys
+import requests
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "email_connectors"))
+from gmail_connector import get_gmail_auth_url, get_gmail_tokens, refresh_gmail_token, fetch_gmail_emails
+from outlook_connector import get_outlook_auth_url, get_outlook_tokens, refresh_outlook_token, fetch_outlook_emails
+from email_scanner import scan_emails_with_model
 load_dotenv()
 
 app = Flask(__name__)
@@ -195,6 +202,145 @@ def get_insights():
         return jsonify(insights)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+TOKEN_STORE = {}
+
+@app.route("/gmail/auth-url", methods=["GET"])
+def gmail_auth_url():
+    redirect_uri = request.args.get("redirect_uri") or "http://localhost:3000/gmail/callback"
+    url = get_gmail_auth_url(redirect_uri)
+    return jsonify({"auth_url": url})
+
+@app.route("/gmail/callback", methods=["GET"])
+def gmail_callback():
+    code = request.args.get("code")
+    redirect_uri = request.args.get("redirect_uri") or "http://localhost:3000/gmail/callback"
+    username = request.headers.get("X-User-Username", "default_user")
+    
+    if not code:
+        return jsonify({"error": "Authorization code is missing"}), 400
+        
+    try:
+        tokens = get_gmail_tokens(code, redirect_uri)
+        if username not in TOKEN_STORE:
+            TOKEN_STORE[username] = {}
+        TOKEN_STORE[username]["gmail"] = tokens
+        return jsonify({"message": "Gmail connected successfully"})
+    except Exception as e:
+        return jsonify({"error": f"Failed to exchange Google code: {str(e)}"}), 500
+
+@app.route("/gmail/emails", methods=["GET"])
+def gmail_emails():
+    username = request.headers.get("X-User-Username", "default_user")
+    user_tokens = TOKEN_STORE.get(username, {}).get("gmail")
+    
+    if not user_tokens:
+        return jsonify({"error": "Gmail account not connected"}), 401
+        
+    try:
+        try:
+            emails = fetch_gmail_emails(user_tokens.get("access_token"), limit=50)
+        except requests.exceptions.HTTPError as err:
+            if err.response.status_code == 401 and user_tokens.get("refresh_token"):
+                new_tokens = refresh_gmail_token(user_tokens["refresh_token"])
+                user_tokens["access_token"] = new_tokens["access_token"]
+                if "refresh_token" in new_tokens:
+                    user_tokens["refresh_token"] = new_tokens["refresh_token"]
+                emails = fetch_gmail_emails(user_tokens["access_token"], limit=50)
+            else:
+                raise err
+        return jsonify({"emails": emails})
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch Gmail emails: {str(e)}"}), 500
+
+@app.route("/outlook/auth-url", methods=["GET"])
+def outlook_auth_url():
+    redirect_uri = request.args.get("redirect_uri") or "http://localhost:3000/outlook/callback"
+    url = get_outlook_auth_url(redirect_uri)
+    return jsonify({"auth_url": url})
+
+@app.route("/outlook/callback", methods=["GET"])
+def outlook_callback():
+    code = request.args.get("code")
+    redirect_uri = request.args.get("redirect_uri") or "http://localhost:3000/outlook/callback"
+    username = request.headers.get("X-User-Username", "default_user")
+    
+    if not code:
+        return jsonify({"error": "Authorization code is missing"}), 400
+        
+    try:
+        tokens = get_outlook_tokens(code, redirect_uri)
+        if username not in TOKEN_STORE:
+            TOKEN_STORE[username] = {}
+        TOKEN_STORE[username]["outlook"] = tokens
+        return jsonify({"message": "Outlook connected successfully"})
+    except Exception as e:
+        return jsonify({"error": f"Failed to exchange Outlook code: {str(e)}"}), 500
+
+@app.route("/outlook/emails", methods=["GET"])
+def outlook_emails():
+    username = request.headers.get("X-User-Username", "default_user")
+    user_tokens = TOKEN_STORE.get(username, {}).get("outlook")
+    
+    if not user_tokens:
+        return jsonify({"error": "Outlook account not connected"}), 401
+        
+    try:
+        try:
+            emails = fetch_outlook_emails(user_tokens.get("access_token"), limit=50)
+        except requests.exceptions.HTTPError as err:
+            if err.response.status_code == 401 and user_tokens.get("refresh_token"):
+                new_tokens = refresh_outlook_token(user_tokens["refresh_token"])
+                user_tokens["access_token"] = new_tokens["access_token"]
+                if "refresh_token" in new_tokens:
+                    user_tokens["refresh_token"] = new_tokens["refresh_token"]
+                emails = fetch_outlook_emails(user_tokens["access_token"], limit=50)
+            else:
+                raise err
+        return jsonify({"emails": emails})
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch Outlook emails: {str(e)}"}), 500
+
+@app.route("/scan-emails", methods=["POST"])
+def scan_emails_route():
+    data = request.get_json(silent=True) or {}
+    provider = data.get("provider", "").lower()
+    username = request.headers.get("X-User-Username", "default_user")
+    
+    if provider not in ("gmail", "outlook"):
+        return jsonify({"error": "Invalid provider. Must be 'gmail' or 'outlook'."}), 400
+        
+    user_tokens = TOKEN_STORE.get(username, {}).get(provider)
+    if not user_tokens:
+        return jsonify({"error": f"{provider.capitalize()} account not connected."}), 401
+        
+    try:
+        if provider == "gmail":
+            try:
+                emails = fetch_gmail_emails(user_tokens.get("access_token"), limit=50)
+            except requests.exceptions.HTTPError as err:
+                if err.response.status_code == 401 and user_tokens.get("refresh_token"):
+                    new_tokens = refresh_gmail_token(user_tokens["refresh_token"])
+                    user_tokens["access_token"] = new_tokens["access_token"]
+                    emails = fetch_gmail_emails(user_tokens["access_token"], limit=50)
+                else:
+                    raise err
+        else:
+            try:
+                emails = fetch_outlook_emails(user_tokens.get("access_token"), limit=50)
+            except requests.exceptions.HTTPError as err:
+                if err.response.status_code == 401 and user_tokens.get("refresh_token"):
+                    new_tokens = refresh_outlook_token(user_tokens["refresh_token"])
+                    user_tokens["access_token"] = new_tokens["access_token"]
+                    emails = fetch_outlook_emails(user_tokens["access_token"], limit=50)
+                else:
+                    raise err
+                    
+        scan_results = scan_emails_with_model(emails)
+        return jsonify(scan_results)
+    except Exception as e:
+        return jsonify({"error": f"Email scan execution failed: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
