@@ -184,6 +184,19 @@ def analyze_email_header():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/spam-insights", methods=["GET"])
+def get_insights():
+    try:
+        limit = request.args.get("limit", default=10, type=int)
+        category = request.args.get("category", default=None, type=str)
+        
+        from spam_insights import get_spam_insights
+        insights = get_spam_insights(limit=limit, category=category)
+        return jsonify(insights)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     FLASK_PORT = int(os.getenv("FLASK_PORT", 5000))
     app.run(host="0.0.0.0", port=FLASK_PORT, debug=True)

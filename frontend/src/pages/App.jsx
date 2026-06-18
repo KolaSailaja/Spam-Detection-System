@@ -10,6 +10,7 @@ import Login from "./Login.jsx";
 import Register from "./Register.jsx";
 import EmailHeaderAnalyzer from "../components/EmailHeaderAnalyzer";
 import BulkSpamDetection from "../components/BulkSpamDetection";
+import SpamInsightsDashboard from "../components/SpamInsightsDashboard";
 
 function SpamDetector() {
   const [text, setText] = useState("");
@@ -214,6 +215,16 @@ function SpamDetector() {
               Bulk Detector
             </button>
             <button
+              onClick={() => setActiveTab("insights")}
+              className={`pb-1 px-4 transition-all border-b-2 ${
+                activeTab === "insights"
+                  ? "border-current opacity-100"
+                  : "border-transparent opacity-50 hover:opacity-75"
+              }`}
+            >
+              Insights
+            </button>
+            <button
               onClick={() => setActiveTab("authenticity")}
               className={`pb-1 px-4 transition-all border-b-2 ${
                 activeTab === "authenticity"
@@ -325,6 +336,8 @@ function SpamDetector() {
             </>
           ) : activeTab === "bulk" ? (
             <BulkSpamDetection />
+          ) : activeTab === "insights" ? (
+            <SpamInsightsDashboard />
           ) : (
             <EmailHeaderAnalyzer />
           )}

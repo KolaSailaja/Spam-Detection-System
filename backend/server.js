@@ -257,6 +257,33 @@ app.post("/bulk-predict/export", protect, upload.single("file"), async (req, res
 });
 
 
+// Protected: Get spam pattern insights & analytics (forwarded to ML API)
+app.get("/spam-insights", protect, async (req, res) => {
+  try {
+    const limit = req.query.limit || 10;
+    const category = req.query.category || "";
+
+    const response = await axios.get(`${ML_API_BASE}/spam-insights`, {
+      params: { limit, category }
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    if (error.code === "ECONNREFUSED" || error.code === "ENOTFOUND") {
+      console.error("Flask ML API is unavailable:", error.message);
+      return res.status(503).json({
+        error: "Flask ML API is currently unavailable. Please try again later.",
+      });
+    }
+    if (error.response) {
+      return res.status(error.response.status).json(error.response.data);
+    }
+    console.error(error.message);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

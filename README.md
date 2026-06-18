@@ -403,6 +403,48 @@ Submit files (EML format) under key `file`.
 
 ---
 
+## 🧠 Spam Pattern Insights & Analytics Dashboard
+
+Features:
+* **Top keywords frequency**: Displays the most common keywords associated with threats.
+* **Trending phrases**: Analyzes bigrams/trigrams to identify key word sequences in spam (e.g. `claim your prize`).
+* **Suspicious terms tracking**: Extracts recently flagged tokens from threat classifications.
+* **Category indicators**: Groups common threat indicators by category (Spam, Smishing, Offensive).
+
+### Endpoint
+
+#### `GET /spam-insights`
+Available on both the Node backend (`/spam-insights`, requires authentication) and the Flask ML API (`/spam-insights`).
+
+**Query Parameters:**
+- `limit` (optional, default: 10): Limits the number of keywords/phrases returned.
+- `category` (optional, e.g. `spam`): Filters the source metrics to a specific threat category.
+
+**Example Response:**
+```json
+{
+  "top_keywords": [
+    {"keyword": "free", "count": 45},
+    {"keyword": "prize", "count": 35}
+  ],
+  "trending_phrases": [
+    {"phrase": "click here now", "count": 25},
+    {"phrase": "claim your prize", "count": 20}
+  ],
+  "recent_suspicious_terms": [
+    "crypto giveaway",
+    "verify wallet"
+  ],
+  "category_indicators": {
+    "spam": ["free", "prize", "winner"],
+    "smishing": ["otp", "verify", "bank"],
+    "offensive": ["abusive", "hate"]
+  }
+}
+```
+
+---
+
 ## 📁 Bulk Spam Detection
 
 Features:
