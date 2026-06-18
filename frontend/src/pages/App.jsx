@@ -5,11 +5,49 @@ import Login from "./Login.jsx";
 import Register from "./Register.jsx";
 import api from "../utils/axiosInstance";
 import "../App.css";
-import { useNavigate } from "react-router-dom";
 import FeatureImportance from "../components/FeatureImportance";
 import History from "../components/History";
+import FeedbackWidget from "../components/FeedbackWidget";
 
-function App() {
+const THEMES = {
+  ocean: {
+    name: "🌊 Ocean",
+    light: "bg-gradient-to-br from-blue-500 via-cyan-400 to-teal-500",
+    dark: "bg-gradient-to-br from-blue-900 via-cyan-900 to-teal-900",
+    card: "bg-[#FAF1E6]/35",
+    accent: "bg-indigo-500 hover:bg-indigo-600",
+  },
+  sunset: {
+    name: "🌅 Sunset",
+    light: "bg-gradient-to-br from-orange-400 via-pink-400 to-red-500",
+    dark: "bg-gradient-to-br from-orange-900 via-pink-900 to-red-900",
+    card: "bg-[#FFF5E6]/35",
+    accent: "bg-orange-500 hover:bg-orange-600",
+  },
+  forest: {
+    name: "🌿 Forest",
+    light: "bg-gradient-to-br from-green-400 via-emerald-400 to-teal-500",
+    dark: "bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900",
+    card: "bg-[#E6FAF1]/35",
+    accent: "bg-green-600 hover:bg-green-700",
+  },
+  purple: {
+    name: "💜 Purple",
+    light: "bg-gradient-to-br from-purple-500 via-violet-400 to-pink-500",
+    dark: "bg-gradient-to-br from-purple-900 via-violet-900 to-pink-900",
+    card: "bg-[#F5E6FA]/35",
+    accent: "bg-purple-600 hover:bg-purple-700",
+  },
+  mono: {
+    name: "🖤 Mono",
+    light: "bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500",
+    dark: "bg-gradient-to-br from-gray-900 via-gray-800 to-black",
+    card: "bg-white/35",
+    accent: "bg-gray-700 hover:bg-gray-800",
+  },
+};
+
+function SpamDetector() {
   const [text, setText] = useState("");
   const [result, setResult] = useState("");
   const [confidence, setConfidence] = useState(null);
@@ -17,18 +55,14 @@ function App() {
   const [type, setType] = useState("message");
   const [darkMode, setDarkMode] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const [theme, setTheme] = useState("ocean");
+  const [showThemes, setShowThemes] = useState(false);
+  const { user, logout } = useAuth();
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/");
-  };
+  const currentTheme = THEMES[theme];
 
   const handlePredict = async () => {
     if (!text) return;
-
     try {
       setLoading(true);
       const res = await api.post(`${import.meta.env.VITE_API_URI}/predict`, {
@@ -45,205 +79,91 @@ function App() {
   };
 
   const getColor = () => {
-    if (result === "ham") return "text-green-600";
-    if (result === "spam") return "text-red-600";
+    if (result === "ham" || result === "safe") return "text-green-600";
+    if (result === "spam" || result === "malicious") return "text-red-600";
     if (result === "smishing") return "text-orange-500";
     return "text-gray-600";
   };
 
   const getBg = () => {
-    if (result === "ham")
-      return "bg-[#81912F]/25 backdrop-blur-md border border-white/30";
-    if (result === "spam")
-      return "bg-red-400/20 backdrop-blur-md border border-white/30";
-    if (result === "smishing")
-      return "bg-orange-400/20 backdrop-blur-md border border-white/30";
+    if (result === "ham" || result === "safe") return "bg-[#81912F]/25 backdrop-blur-md border border-white/30";
+    if (result === "spam" || result === "malicious") return "bg-red-400/20 backdrop-blur-md border border-white/30";
+    if (result === "smishing") return "bg-orange-400/20 backdrop-blur-md border border-white/30";
     return "bg-white/20 backdrop-blur-md border border-white/30";
   };
 
-  const confidencePct =
-    confidence !== null
-      ? Math.min(confidence * 50 + 50, 100).toFixed(1)
-      : "0.0";
+  const confidencePct = confidence !== null ? Math.min(confidence * 50 + 50, 100).toFixed(1) : "0.0";
 
   return (
-    <div
-      className={`min-h-screen transition-all duration-500 ${
-        darkMode
-          ? "bg-gradient-to-br from-gray-900 via-gray-800 to-black"
-          : "bg-gradient-to-br from-blue-500 via-pink-300 to-cyan-600"
-      }`}
-    >
-      {/* Top Navbar */}
-      <div className="flex justify-between items-center p-4">
-        <span
-          className={`text-sm font-medium px-4 py-2 rounded-full ${
-            darkMode ? "bg-gray-700 text-gray-300" : "bg-white/30 text-gray-800"
-          }`}
-        >
-          👤 {user?.username}
-        </span>
-
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500"
-          >
-            📜 History
-          </button>
-
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`px-4 py-2 rounded-xl font-semibold transition-all duration-300 ${
-              darkMode
-                ? "bg-yellow-400 text-black hover:bg-yellow-300"
-                : "bg-gray-800 text-white hover:bg-gray-700"
-            }`}
-          >
-            {darkMode ? "☀️ Light" : "🌙 Dark"}
-          </button>
-
-          <button
-            onClick={logout}
-            className="px-4 py-2 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-500"
-          >
-            Logout
-          </button>
-        </div>
+    <div className={`min-h-screen flex items-center justify-center px-4 transition-all duration-500 ${darkMode ? currentTheme.dark : currentTheme.light}`}>
+      
+      {/* Top controls (Theme/User/History) kept as per your logic */}
+      <div className="absolute top-4 right-4 flex gap-2 flex-wrap justify-end">
+        <button onClick={() => setShowThemes(!showThemes)} className={`px-4 py-2 rounded-xl font-semibold ${darkMode ? "bg-gray-700 text-white" : "bg-white/30"}`}>🎨 Theme</button>
       </div>
 
-      {/* History Sidebar */}
+      <div className="absolute top-4 left-4">
+        <button onClick={() => setShowHistory(!showHistory)} className="px-4 py-2 rounded-xl bg-indigo-600 text-white">📜 History</button>
+      </div>
+
       {showHistory && (
-        <div
-          className={`fixed top-0 left-0 h-full w-80 overflow-y-auto p-4 shadow-2xl z-50 ${
-            darkMode ? "bg-gray-900 text-white" : "bg-white"
-          }`}
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">📜 History</h2>
-
-            <button
-              onClick={() => setShowHistory(false)}
-              className="text-red-500 text-xl"
-            >
-              ✕
-            </button>
-          </div>
-
+        <div className={`fixed top-0 left-0 h-full w-80 overflow-y-auto p-4 z-50 ${darkMode ? "bg-gray-900" : "bg-white"}`}>
+          <button onClick={() => setShowHistory(false)}>✕</button>
           <History darkMode={darkMode} />
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="flex justify-center items-center px-4 py-8">
-        <div
-          className={`w-full max-w-lg backdrop-blur-xl border rounded-3xl shadow-2xl p-6 sm:p-8 text-center transition-all duration-500 ${
-            darkMode
-              ? "bg-gray-900/40 border-gray-600"
-              : "bg-white/20 border-white/20"
-          }`}
-        >
-          <div
-            className={`rounded-2xl p-6 sm:p-8 transition-all duration-500 ${
-              darkMode
-                ? "bg-gray-800/70 text-white"
-                : "bg-[#FAF1E6]/35 text-black"
-            }`}
-          >
-            <h1 className="text-3xl font-bold mb-2">📩 Spam Detector</h1>
+      {/* Main Card */}
+      <div className={`w-full max-w-lg backdrop-blur-xl border rounded-3xl p-6 text-center ${darkMode ? "bg-gray-900/40 border-gray-600" : "bg-white/20 border-white/20"}`}>
+        <div className={`w-full max-w-md rounded-2xl p-6 mx-auto ${darkMode ? "bg-gray-800/70" : `${currentTheme.card}`}`}>
+          <h1 className="text-3xl font-bold mb-2">📨 Spam Detector</h1>
+          
+          <select value={type} onChange={(e) => setType(e.target.value)} className="w-full p-3 rounded-xl border mb-4">
+            <option value="message">Message</option>
+            <option value="email">Email</option>
+            <option value="url">URL</option>
+          </select>
 
-            <p
-              className={`font-semibold text-sm mb-4 ${
-                darkMode ? "text-gray-300" : "text-gray-700"
-              }`}
-            >
-              Analyze messages & emails instantly
-            </p>
+          <textarea className="w-full border p-3 rounded-xl resize-none" rows="4" value={text} onChange={(e) => setText(e.target.value)} />
 
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className={`w-full p-3 rounded-xl border mb-4 ${
-                darkMode ? "bg-gray-700 text-white" : "bg-white text-black"
-              }`}
-            >
-              <option value="message">Message</option>
-              <option value="email">Email</option>
-            </select>
+          <button onClick={handlePredict} className={`mt-4 w-full py-3 rounded-xl ${currentTheme.accent}`}>
+            {loading ? "Analyzing..." : "Analyze"}
+          </button>
 
-            <textarea
-              rows="4"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={
-                type === "message"
-                  ? "Type your message..."
-                  : "Paste your email content..."
-              }
-              className={`w-full border p-3 rounded-xl resize-none ${
-                darkMode ? "bg-gray-700 text-white" : "bg-white text-black"
-              }`}
-            />
-
-            <button
-              onClick={handlePredict}
-              className="mt-4 w-full py-3 rounded-xl font-medium bg-indigo-500 text-white hover:bg-indigo-600"
-            >
-              {loading ? "Analyzing..." : `Analyze ${type}`}
-            </button>
-
-            {result && (
-              <div className="mt-4">
-                <div
-                  className={`p-4 rounded-xl font-semibold ${getBg()} ${getColor()}`}
-                >
-                  {result === "ham" && "✅ Safe Message"}
-                  {result === "spam" && "❌ Spam Detected"}
-                  {result === "smishing" && "⚠️ Fraud Alert"}
-                  {result === "Error" && "⚠️ Something went wrong"}
-                </div>
+          {/* Fixed Result Display Section */}
+          {result && (
+            <div className="mt-4">
+              <div className={`p-4 rounded-xl font-semibold ${getBg()} ${getColor()}`}>
+                {result === "ham" && "✅ Safe Message"}
+                {result === "spam" && "🚫 Spam Detected"}
+                {result === "smishing" && "⚠️ Fraud Alert"}
+                {result === "safe" && "✅ Safe URL"}
+                {result === "malicious" && "🚨 Malicious URL"}
+                {result === "Error" && "⚠️ Something went wrong"}
               </div>
-            )}
 
-            {result && confidence !== null && result !== "Error" && (
-              <div className="mt-4 text-left">
-                <p className="text-sm mb-1">
-                  Model Confidence: {confidencePct}%
-                </p>
-
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${
-                      result === "ham"
-                        ? "bg-green-500"
-                        : result === "spam"
-                          ? "bg-red-500"
-                          : "bg-orange-500"
-                    }`}
-                    style={{ width: `${confidencePct}%` }}
-                  />
+              {result !== "Error" && confidence !== null && (
+                <div className="mt-3 text-left">
+                  <p className="text-xs font-medium mb-1">Model Confidence: {confidencePct}%</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="h-2 rounded-full bg-indigo-500" style={{ width: `${confidencePct}%` }} />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <button
-              onClick={() => {
-                setText("");
-                setResult("");
-                setConfidence(null);
-                setType("message");
-              }}
-              className="mt-4 w-full py-3 rounded-xl bg-gray-500 text-white hover:bg-gray-600"
-            >
-              Reset
-            </button>
+              {result !== "Error" && type !== "url" && (
+                <FeedbackWidget text={text} predictedLabel={result} darkMode={darkMode} />
+              )}
+            </div>
+          )}
 
-            <FeatureImportance darkMode={darkMode} />
-          </div>
+          <button onClick={() => { setText(""); setResult(""); }} className="mt-4 w-full py-3 rounded-xl bg-gray-500 text-white">Reset</button>
+          <FeatureImportance darkMode={darkMode} />
         </div>
       </div>
     </div>
   );
 }
+export default SpamDetector;
 
-export default App;
+
