@@ -14,6 +14,7 @@ import EmailHeaderAnalyzer from "../components/EmailHeaderAnalyzer";
 import BulkSpamDetection from "../components/BulkSpamDetection";
 import SpamInsightsDashboard from "../components/SpamInsightsDashboard";
 import EmailScannerDashboard from "../components/EmailScannerDashboard";
+import Chatbot from "../components/Chatbot";
 import { redirect } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 
@@ -107,7 +108,7 @@ function SpamDetector() {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center px-4 transition-all duration-500 ${
+      className={`min-h-screen flex items-center justify-center px-4 py-8 pb-32 transition-all duration-500 ${
         isDark ? activeTheme.dark : activeTheme.light
       }`}
     >
@@ -430,21 +431,9 @@ function SpamDetector() {
                     className={`w-full rounded-full h-3 mb-5 ${
                       isDark ? "bg-slate-700" : "bg-slate-200"
                     }`}/>
-
-              {result && (
-                <div className="mt-4 border border-slate-350/20 rounded-2xl p-2 bg-slate-500/5">
-                  <div
-                    className={`p-4 rounded-xl font-bold transition-all duration-300 ${getBg()} ${getColor()}`}
-                  >
-                    {result === "ham" && "✅ Safe Message"}
-                    {result === "spam" && "🚫 Spam Detected"}
-                    {result === "smishing" && "⚠️ Fraud Alert"}
-                    {result === "safe" && "✅ Safe URL"}
-                    {result === "malicious" && "🚨 Malicious URL"}
-                    {result === "Error" && "⚠️ Something went wrong"}
-                  </div>
-                </div>
+                </>
               )}
+
               {/* <WordCloud darkMode={darkMode} /> */}
 
               {result && confidence !== null && result !== "Error" && (
@@ -499,8 +488,7 @@ function SpamDetector() {
                       "No suspicious patterns were detected in this content."}
                   </p>
                 </div>
-              )}
-                </>
+
               )}
             </div>
           )}
@@ -544,6 +532,7 @@ function SpamDetector() {
           <WordCloud darkMode={isDark} />
         </div>
       </div>
+      <Chatbot />
     </div>
   );
 }

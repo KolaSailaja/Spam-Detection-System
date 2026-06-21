@@ -27,9 +27,11 @@ app.use(express.json());
 const authRoutes = require("./routes/authRoutes");
 const historyRoutes = require("./routes/historyRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 app.use("/api/auth", authRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/analytics", analyticsRoutes);
+app.use("/api/chat", chatRoutes);
 
 const { protect } = require("./middleware/authMiddleware");
 
