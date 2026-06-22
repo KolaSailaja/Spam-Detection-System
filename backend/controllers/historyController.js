@@ -32,13 +32,14 @@ const getHistory = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       error: {
         code: "INTERNAL_SERVER_ERROR",
         message: "Server error",
       },
     });
-  } 
+  }
+};
 
 // Delete a single history item
 const deleteHistoryItem = async (req, res) => {

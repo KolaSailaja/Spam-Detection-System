@@ -1,4 +1,4 @@
-const { formatError, errorMiddleware, errorCodes } = require('./utils/errorHelper');
+const { formatError, errorHandler, errorCodes } = require('./utils/errorHelper');
 require("dotenv").config();
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]); // ensure SRV records resolve on all networks
@@ -643,7 +643,7 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
-app.use(errorMiddleware);
+app.use(errorHandler);
 // ====== START SERVER ======
 // Protected: connect a read-only IMAP inbox for scheduled scanning
 app.post("/imap/connect", protect, async (req, res) => {
