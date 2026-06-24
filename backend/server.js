@@ -62,6 +62,27 @@ const connectWithRetry = async (retries=5, delay=5000) => {
     }
 };
 
+if(process.env.NODE_ENV === 'development'){
+  //Log all queries in development mode
+  mongoose.set('debug',true);
+} else {
+  // Log only slow queries in production mode
+  const originalExec = mongoose.Query.prototype.exec;
+  mongoose.Query.prototype.exec = async function() {
+    const start = Date.now();
+    const result = await originalExec.apply(this, arguments);
+    const duration = Date.now() - start;
+
+    if(duration > 100){ // Log queries taking longer than 100ms
+      console.log(`🐢 [${new Date().toISOString()}] Slow Query (${duration}ms):`);
+      console.log(`   Collection: ${this._collection.collectionName}`);
+      console.log(`   Query:`, JSON.stringify(this._conditions));
+    }
+
+    return result;
+    };
+}
+
 // Start connection with retry
 connectWithRetry();
 
