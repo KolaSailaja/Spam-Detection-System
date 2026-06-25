@@ -5,6 +5,7 @@ const History = () => {
     const [history, setHistory] = useState([]);
     const [selectedItems, setSelectedItems] = useState([]);
     const [sortOrder, setSortOrder] = useState('newest');
+    const [isLoading, setIsLoading] = useState(true);
 
     const sortedHistory = [...history].sort((a, b) => {
         const dateA = new Date(a.createdAt || 0);
@@ -13,6 +14,7 @@ const History = () => {
     });
 
     const fetchHistory = async () => {
+        setIsLoading(true);
         try {
             const token = localStorage.getItem('token');
             const res = await axios.get('/api/history', {
@@ -21,6 +23,8 @@ const History = () => {
             setHistory(res.data.data || []);
         } catch (error) {
             console.error('Error fetching history:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -189,7 +193,23 @@ const History = () => {
                 </button>
             )}
 
-            {history.length === 0 ? (
+            {isLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                    <div style={{ 
+                        border: '4px solid #f3f3f3', 
+                        borderTop: '4px solid #3b82f6', 
+                        borderRadius: '50%', 
+                        width: '40px', 
+                        height: '40px', 
+                        animation: 'spin 1s linear infinite', 
+                        margin: '0 auto 16px' 
+                    }} />
+                    <p style={{ color: '#6b7280', fontWeight: '500' }}>Loading history...</p>
+                    <style>
+                        {`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}
+                    </style>
+                </div>
+            ) : history.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 20px', background: '#f9fafb', borderRadius: '12px', border: '2px dashed #e5e7eb', marginTop: '20px' }}>
                     <div style={{ fontSize: '48px', marginBottom: '16px' }}>📦</div>
                     <h3 style={{ margin: '0 0 8px 0', color: '#374151', fontSize: '20px' }}>No scan history yet</h3>

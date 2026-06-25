@@ -343,6 +343,16 @@ function SpamDetector() {
               Email Scanner
             </button>
             <button
+              onClick={() => setActiveTab("history")}
+              className={`pb-1 px-4 transition-all border-b-2 ${
+                activeTab === "history"
+                  ? "border-current opacity-100"
+                  : "border-transparent opacity-50 hover:opacity-75"
+              }`}
+            >
+              History
+            </button>
+            <button
               onClick={() => navigate("/dashboard")}
               className="pb-1 px-4 transition-all border-b-2 border-transparent opacity-50 hover:opacity-75"
             >
@@ -591,6 +601,8 @@ function SpamDetector() {
             <SpamInsightsDashboard />
           ) : activeTab === "scanner" ? (
             <EmailScannerDashboard />
+          ) : activeTab === "history" ? (
+            <History />
           ) : (
             <EmailHeaderAnalyzer />
           )}
