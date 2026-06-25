@@ -624,7 +624,7 @@ export default function EmailScannerDashboard() {
                             </span>
                             <span className="opacity-50 text-[10px] shrink-0 font-semibold">{formattedDate}</span>
                           </div>
-                          <p className="font-semibold text-slate-800 dark:text-slate-200 truncate pr-4">
+                          <p className="font-semibold text-slate-800 dark:text-slate-200 truncate pr-4" title={email.subject || "No Subject"}>
                             {email.subject || "No Subject"}
                           </p>
                         </div>
