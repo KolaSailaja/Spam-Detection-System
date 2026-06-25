@@ -1,5 +1,17 @@
 const mongoose = require('mongoose');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+
+// Read app version from package.json
+let appVersion = 'unknown';
+try {
+    const packageJsonPath = path.join(__dirname, '..', 'package.json');
+    const packageData = fs.readFileSync(packageJsonPath, 'utf8');
+    appVersion = JSON.parse(packageData).version || 'unknown';
+} catch (error) {
+    // Gracefully handle missing package.json or parse error
+}
 
 /**
  * Check MongoDB connection status
@@ -14,7 +26,8 @@ const checkMongoDB = () => {
     };
     return {
         status: states[state] || 'unknown',
-        state: state
+        state: state,
+        ready: state === 1
     };
 };
 
@@ -23,24 +36,29 @@ const checkMongoDB = () => {
  */
 const checkFlaskAPI = async () => {
     try {
-        const apiUrl = process.env.FLASK_API_URL || 'http://localhost:5000/health';
+        let apiUrl = process.env.API || 'http://localhost:5000/predict';
+        // Ensure we hit the base URL for health check, stripping trailing slashes
+        apiUrl = apiUrl.replace(/\/predict\/?$/, "").replace(/\/+$/, "");
+        
         const response = await axios.get(`${apiUrl}/health`, {
-        timeout:2000
-    });
+            timeout: 2000
+        });
         return {
             status: response.status === 200 ? 'healthy' : 'unhealthy',
             ready: response.status === 200,
             url: apiUrl
         };
-} catch (error) {
+    } catch (error) {
+        let apiUrl = process.env.API || 'http://localhost:5000/predict';
         return {
             status: 'error',
             ready: false,
-            url: process.env.FLASK_API_URL || 'http://localhost:5000/health',
+            url: apiUrl.replace(/\/predict\/?$/, "").replace(/\/+$/, ""),
             error: error.message
         };
     }
 };
+
 /**
  * Get comprehensive health status
  */
@@ -54,6 +72,7 @@ const getHealthStatus = async () => {
         status: allReady ? 'healthy' : 'unhealthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
+        version: appVersion,
         dependencies: {
             mongodb: mongodb,
             flask: flask

@@ -15,6 +15,8 @@ import BulkSpamDetection from "../components/BulkSpamDetection";
 import SpamInsightsDashboard from "../components/SpamInsightsDashboard";
 import EmailScannerDashboard from "../components/EmailScannerDashboard";
 import Chatbot from "../components/Chatbot";
+import Footer from "../components/Footer";
+import InstallAppButton from "../components/InstallAppButton";
 import { redirect } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 
@@ -25,6 +27,7 @@ function SpamDetector() {
   const [confidence, setConfidence] = useState(null);
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState("message");
+  const [copied, setCopied] = useState(false);
 
   const [darkMode, setDarkMode] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -58,7 +61,7 @@ function SpamDetector() {
   } = useTheme();
 
   const handlePredict = async () => {
-    if (!text) return;
+    if (!text || text.trim().length === 0) return;
     try {
       setLoading(true);
       const res = await api.post(`${import.meta.env.VITE_API_URI}/predict`, {
@@ -108,12 +111,14 @@ function SpamDetector() {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center px-4 py-8 pb-32 transition-all duration-500 ${
+      className={`min-h-screen flex flex-col items-center px-4 py-8 pb-32 transition-all duration-500 ${
         isDark ? activeTheme.dark : activeTheme.light
       }`}
     >
       {/* Top Controls */}
       <div className="absolute top-4 right-4 flex gap-3 flex-wrap justify-end">
+        <InstallAppButton />
+
         <button
           onClick={() => setShowSettings(!showSettings)}
           className={`px-4 py-2.5 rounded-xl font-bold transition-all active:scale-95 flex items-center gap-2 shadow-md ${
@@ -133,7 +138,36 @@ function SpamDetector() {
         </button>
       </div>
 
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-4 left-4 flex items-center gap-3">
+        <label className="cursor-pointer relative group">
+          {user?.avatarUrl ? (
+            <img src={user.avatarUrl} alt="Avatar" className="w-10 h-10 rounded-full border-2 border-slate-300 object-cover shadow-sm" />
+          ) : (
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm border ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-300'}`}>👤</div>
+          )}
+          <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="text-[10px] text-white font-bold uppercase tracking-wider">Edit</span>
+          </div>
+          <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
+             const file = e.target.files[0];
+             if (!file) return;
+             const formData = new FormData();
+             formData.append('avatar', file);
+             try {
+                const token = localStorage.getItem('token');
+                const res = await api.post(`${import.meta.env.VITE_API_URI || ''}/api/v1/auth/avatar`, formData, {
+                   headers: { 
+                     'Content-Type': 'multipart/form-data',
+                     Authorization: `Bearer ${token}` 
+                   }
+                });
+                localStorage.setItem('user', JSON.stringify(res.data.user));
+                window.location.reload();
+             } catch(err) {
+                alert('Failed to upload avatar: ' + (err.response?.data?.error || err.message));
+             }
+          }} />
+        </label>
         <span
           className={`text-sm font-semibold px-4 py-2 rounded-full shadow-sm backdrop-blur-md ${
             isDark
@@ -141,7 +175,7 @@ function SpamDetector() {
               : "bg-white/30 text-slate-850 border border-white/20"
           }`}
         >
-          👤 {user?.username}
+          {user?.username}
         </span>
       </div>
 
@@ -235,6 +269,7 @@ function SpamDetector() {
       )}
 
       {/* Main card */}
+      <div className="flex-1 flex items-center justify-center w-full">
       <div
         className={`w-full max-w-lg backdrop-blur-xl border rounded-3xl shadow-2xl p-6 sm:p-8 text-center transition-all duration-500 ${
           isDark
@@ -308,6 +343,16 @@ function SpamDetector() {
               Email Scanner
             </button>
             <button
+              onClick={() => setActiveTab("history")}
+              className={`pb-1 px-4 transition-all border-b-2 ${
+                activeTab === "history"
+                  ? "border-current opacity-100"
+                  : "border-transparent opacity-50 hover:opacity-75"
+              }`}
+            >
+              History
+            </button>
+            <button
               onClick={() => navigate("/dashboard")}
               className="pb-1 px-4 transition-all border-b-2 border-transparent opacity-50 hover:opacity-75"
             >
@@ -359,15 +404,31 @@ function SpamDetector() {
             )}
 
             <div className="flex justify-end items-center mt-1.5 px-1 text-xs font-medium tracking-wide opacity-70">
-              <span className={text.length > 500 ? "text-orange-500" : ""}>
-                {text.length.toLocaleString()} characters
-              </span>
+              {text.length > 5000 ? (
+                <span className="text-red-500 font-bold">
+                  {text.length.toLocaleString()} / 5000 characters (Limit exceeded)
+                </span>
+              ) : (
+                <span className={text.length > 500 ? "text-orange-500" : ""}>
+                  {text.length.toLocaleString()} characters
+                </span>
+              )}
             </div>
           </div>
           <button
-            onClick={handlePredict}
-            className={`mt-2 w-full py-3.5 rounded-xl font-bold text-white shadow-md active:scale-95 transition-all ${activeTheme.accent}`}
+            onClick={() => {
+              if (!text.trim()) return;
+              handlePredict();
+            }}
+            disabled={loading || text.trim().length === 0 || text.length > 5000}
+            className={`mt-2 w-full py-3.5 rounded-xl font-bold text-white shadow-md active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${activeTheme.accent}`}
           >
+            {loading && (
+              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            )}
             {loading
               ? "Analyzing..."
               : `Analyze ${type === "url" ? "URL" : type}`}
@@ -396,7 +457,24 @@ function SpamDetector() {
             >
               {/* Heading */}
               <div className="flex justify-between items-center mb-5">
-                <h2 className="text-lg font-bold">📊 Analysis Result</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold">📊 Analysis Result</h2>
+                  <button
+                    onClick={() => {
+                      const scoreStr = confidence !== null ? ` | Confidence: ${confidencePct}%` : "";
+                      const copyText = `Prediction: ${result === 'ham' || result === 'safe' ? 'Safe' : result === 'spam' || result === 'malicious' ? 'Spam/Malicious' : result === 'smishing' ? 'Fraud' : result}${scoreStr}`;
+                      navigator.clipboard.writeText(copyText);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className={`ml-1 w-7 h-7 flex items-center justify-center rounded-full transition-all text-[11px] ${
+                      isDark ? "hover:bg-slate-700 bg-slate-800 text-slate-300" : "hover:bg-slate-200 bg-slate-100 text-slate-600"
+                    }`}
+                    title="Copy Result to Clipboard"
+                  >
+                    {copied ? "✅" : "📋"}
+                  </button>
+                </div>
 
                 {/* Badge */}
                 <span
@@ -526,14 +604,19 @@ function SpamDetector() {
             <SpamInsightsDashboard />
           ) : activeTab === "scanner" ? (
             <EmailScannerDashboard />
+          ) : activeTab === "history" ? (
+            <History />
           ) : (
             <EmailHeaderAnalyzer />
           )}
           <WordCloud darkMode={isDark} />
         </div>
       </div>
-      <Chatbot />
+      </div>
+    <Footer />
+    <Chatbot />
     </div>
+    
   );
 }
 
