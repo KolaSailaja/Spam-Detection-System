@@ -1,17 +1,21 @@
 from flask import Flask, request, jsonify
 import csv
 import joblib
+import numpy as np
 import os
 import re
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 from domain_checker import analyze_text
 from email_header_analyzer import analyze_headers
+from explanation_engine import ExplanationEngine
 from pathlib import Path
 from flask_cors import CORS
 load_dotenv()
 
 app = Flask(__name__)
+
+xai_engine = ExplanationEngine()
 CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 
 MODEL_PATH = os.getenv("MODEL_PATH", "linear_svm_model.pkl")
@@ -88,6 +92,13 @@ def predict():
         text_vector = vectorizer.transform([text])
         prediction = model.predict(text_vector)
         final_output = label_encoder.inverse_transform(prediction)[0]
+
+        # Confidence using decision function for LinearSVC
+        try:
+            scores = model.decision_function(text_vector)
+            confidence = round(float(np.max(scores)), 4)
+        except Exception:
+            confidence = None
         
         # Get domain analysis
         domain_analysis = analyze_text(text)
@@ -108,12 +119,21 @@ def predict():
             from datetime import datetime
             f.write(f"{datetime.now()} - Prediction: '{text_preview}' -> {final_output}\n")
         
-        # Return response with domain analysis
-        return jsonify({
+        # Generate XAI explanation for the input text
+        explanation = xai_engine.analyze(text, input_type=input_type)
+
+        # Return response with domain analysis and explanation
+        response_data = {
             "input": text,
+            "result": final_output,
             "prediction": final_output,
-            "domain_analysis": domain_analysis
-        })
+            "domain_analysis": domain_analysis,
+            "explanation": explanation,
+        }
+        if confidence is not None:
+            response_data["confidence"] = confidence
+
+        return jsonify(response_data)
 
     except Exception as e:
         with open("api.log", "a") as f:
